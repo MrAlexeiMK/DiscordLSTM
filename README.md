@@ -1,5 +1,5 @@
-# DiscordWordPredict
- Train discort bot LSTM (Long short-term memory) model on your discord friends messages by using <a href="https://discord.com/developers/docs/topics/oauth2">Discord API</a>!
+# DiscordLSTM
+ Train discord bot LSTM (Long short-term memory) model on your discord friends messages by using <a href="https://discord.com/developers/docs/topics/oauth2">Discord API</a>!
 ## Install
 ```pip install -r requirements.txt```
 
