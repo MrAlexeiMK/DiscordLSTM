@@ -1,4 +1,4 @@
-# DiscordWordPredict
+# DiscordLSTM
  Train discort bot by different models on your discord friends messages by using <a href="https://discord.com/developers/docs/topics/oauth2">Discord API</a>!
 ## Install
 ```pip install -r requirements.txt```
