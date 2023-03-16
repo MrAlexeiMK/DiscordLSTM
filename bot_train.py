@@ -193,11 +193,12 @@ def train(modelPath, dataPath, extractLimit, epochs, splits):
     for i in range(splits):
         print("[INFO] " + str(i+1) + "/" + str(splits) + " split")
         try:
-            MODEL.fit(Q, A, epochs=epochs, validation_split=0.2, shuffle=True, callbacks=[ModelSaving(modelPath)])
+            MODEL.fit(Q, A, epochs=epochs, validation_split=0.2, callbacks=[ModelSaving(modelPath)])
         except ValueError:
             print("[WARNING] Model will be recreated at '" + modelPath + "' cause of different tokenizer")
             create(modelPath, vocab_size)
-            MODEL.fit(Q, A, epochs=epochs, validation_split=0.2, shuffle=True, callbacks=[ModelSaving(modelPath)])
+            MODEL.fit(Q, A, epochs=epochs, validation_split=0.2, callbacks=[ModelSaving(modelPath)])
+        Q, A = shuffle(Q, A)
     
     save(modelPath)
 
@@ -209,8 +210,8 @@ def main(argv):
     modelPath = None
     dataPath = None
     extractLimit = 200000
-    epochs = 50
-    splits = 5
+    epochs = 10
+    splits = 40
 
     opts, args = getopt.getopt(argv, "hm:d:l:e:s:",["modelPath=", "dataPath=", "limit=", "epochs=", "splits="])
     for opt, arg in opts:
