@@ -177,7 +177,7 @@ def train(modelPath, dataPath, extractLimit, epochs, splits):
         def __init__(self, modelPath):
             self.modelPath = modelPath
         def on_epoch_end(self, epoch, logs = None):
-            if epoch % SAVE_EVERY_EPOCHS == 0:
+            if (epoch + 1) % SAVE_EVERY_EPOCHS == 0:
                 save(self.modelPath)
 
     if loaded:
