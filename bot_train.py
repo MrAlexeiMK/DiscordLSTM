@@ -3,6 +3,7 @@ import sys
 import re
 import pickle
 import numpy as np
+import signal
 from nltk.tokenize import word_tokenize, sent_tokenize
 
 # Max words in question
@@ -10,6 +11,9 @@ QUESTION_MAX_WORDS = 20
 
 # TensorFlow model
 MODEL = None
+
+# Save every count of epoch
+SAVE_EVERY_EPOCHS = 10
 
 # For converting word to token
 TOKENIZER = None
@@ -58,7 +62,8 @@ def create(modelPath, vocabSize):
 
     MODEL = tf.keras.Sequential([
         # [26, 125, 1, ..., 0, 0, 0] * QUESTION_MAX_WORDS
-        tf.keras.layers.Embedding(vocabSize, 64, input_length=QUESTION_MAX_WORDS),
+        tf.keras.layers.Embedding(vocabSize, 256, input_length=QUESTION_MAX_WORDS),
+        tf.keras.layers.LSTM(64, return_sequences=True),
         tf.keras.layers.LSTM(64),
         # [0.1, 0.15, 0.35, ..., 0.02, 0.13] * vocab_size
         tf.keras.layers.Dense(vocabSize, activation='softmax')
@@ -86,11 +91,13 @@ def load(modelPath):
     print("[INFO] Loaded model contains " + str(vocab_size) + " words")
     print("[INFO] Model successfully loaded!")
 
-def train(modelPath, dataPath, extractLimit, epochs):
+def train(modelPath, dataPath, extractLimit, epochs, splits):
     global MODEL, TOKENIZER
-
+    
+    loaded = False
     try:
         load(modelPath)
+        loaded = True
     except:
         print("[INFO] Model doesn't exist at path '" + modelPath + "'. It will be created soon")
 
@@ -162,18 +169,40 @@ def train(modelPath, dataPath, extractLimit, epochs):
     from tensorflow.keras.utils import to_categorical
     A = to_categorical(A, num_classes=vocab_size)
     print(f"[INFO] Categorical answers shape: {A.shape}\n")
+    
+    import tensorflow as tf
+    
+    # Model fit callback on each epoch
+    class ModelSaving(tf.keras.callbacks.Callback):
+        def __init__(self, modelPath):
+            self.modelPath = modelPath
+        def on_epoch_end(self, epoch, logs = None):
+            if epoch % SAVE_EVERY_EPOCHS == 0:
+                save(self.modelPath)
 
-    try:
-        MODEL.fit(Q, A, epochs=epochs, validation_split=0.1)
-    except ValueError:
-        print("[WARNING] Model will be recreated at '" + modelPath + "' cause of different tokenizer")
-        create(modelPath, vocab_size)
-        MODEL.fit(Q, A, epochs=epochs, validation_split=0.1)
-
+    if loaded:
+        print("[WARNING] Loaded model accuracy can be lower than expected cause of another validation test set")
+        
+    def exit_handler(sig, frame):
+        print('\n[INFO] You pressed [Ctrl + C]. Saving the model...')
+        save(modelPath)
+        sys.exit(0)
+        
+    signal.signal(signal.SIGINT, exit_handler)
+    
+    for i in range(splits):
+        print("[INFO] " + str(i+1) + "/" + str(splits) + " split")
+        try:
+            MODEL.fit(Q, A, epochs=epochs, validation_split=0.2, shuffle=True, callbacks=[ModelSaving(modelPath)])
+        except ValueError:
+            print("[WARNING] Model will be recreated at '" + modelPath + "' cause of different tokenizer")
+            create(modelPath, vocab_size)
+            MODEL.fit(Q, A, epochs=epochs, validation_split=0.2, shuffle=True, callbacks=[ModelSaving(modelPath)])
+    
     save(modelPath)
 
 def train_help():
-    print('[INFO] python bot_train.py --modelPath <modelPath> --dataPath <trainDataPath> -l [extractLimit] -e [epochsCount]')
+    print('[INFO] python bot_train.py --modelPath <modelPath> --dataPath <trainDataPath> -l [extractLimit] -e [epochsCount] --splits [validationSplitsCount]')
     sys.exit()
 
 def main(argv):
@@ -181,8 +210,9 @@ def main(argv):
     dataPath = None
     extractLimit = 200000
     epochs = 50
+    splits = 5
 
-    opts, args = getopt.getopt(argv, "hm:d:l:e:",["modelPath=", "dataPath=", "limit=", "epochs="])
+    opts, args = getopt.getopt(argv, "hm:d:l:e:s:",["modelPath=", "dataPath=", "limit=", "epochs=", "splits="])
     for opt, arg in opts:
         if opt == '-h':
             train_help()
@@ -196,6 +226,8 @@ def main(argv):
             extractLimit = int(arg)
         elif opt in ("-e", "--epochs"):
             epochs = int(arg)
+        elif opt in ("-s", "--splits"):
+            splits = int(arg)
 
     cancelled = False
 
@@ -209,7 +241,7 @@ def main(argv):
     if cancelled:
         train_help()
     
-    train(modelPath, dataPath, extractLimit, epochs)
+    train(modelPath, dataPath, extractLimit, epochs, splits)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
