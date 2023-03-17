@@ -189,16 +189,27 @@ def train(modelPath, dataPath, extractLimit, epochs, splits):
         sys.exit(0)
         
     signal.signal(signal.SIGINT, exit_handler)
-    
-    for i in range(splits):
-        print("[INFO] " + str(i+1) + "/" + str(splits) + " split")
+
+    from sklearn.model_selection import KFold
+
+    index = 0
+    for train_index, test_index in KFold(splits).split(Q):
+        print(f"[INFO] {index}/{splits} split")
+        Q_train, Q_test = Q[train_index], Q[test_index]
+        A_train, A_test = A[train_index], A[test_index]
+
         try:
-            MODEL.fit(Q, A, epochs=epochs, validation_split=0.2, callbacks=[ModelSaving(modelPath)])
+            MODEL.fit(Q_train, A_train, epochs=epochs, 
+                      validation_data=(Q_test, A_test), callbacks=[ModelSaving(modelPath)])
         except ValueError:
-            print("[WARNING] Model will be recreated at '" + modelPath + "' cause of different tokenizer")
+            print(f"[WARNING] Model will be recreated at '{modelPath}' cause of different tokenizer")
             create(modelPath, vocab_size)
-            MODEL.fit(Q, A, epochs=epochs, validation_split=0.2, callbacks=[ModelSaving(modelPath)])
-        Q, A = shuffle(Q, A)
+            MODEL.fit(Q_train, A_train, epochs=epochs, 
+                      validation_data=(Q_test, A_test), callbacks=[ModelSaving(modelPath)])
+        
+        save(modelPath)
+
+        index+=1
     
     save(modelPath)
 

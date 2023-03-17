@@ -20,7 +20,7 @@
 ```trainDataPath``` - path to '.csv' file with collected user messages  
 ```extractLimit``` - count of random rows from file that will been used to train model (200000 by default)  
 ```epochsCount``` - count of epochs to train the model (50 by default)
-```validationSplitsCount``` - count of train-test splits for each epoch (5 by default)  
+```validationSplitsCount``` - count of train-test K-fold validation splits for each epoch (5 by default)  
 
 Final count of training iterations will be <b>epochsCount * validationSplitsCount</b>.  
   
