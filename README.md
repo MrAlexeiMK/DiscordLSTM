@@ -5,7 +5,9 @@
 
 ## Usage
 ### Collect messages dataset of user
-```python bot_collect_messages.py -t <discordBotToken> -u [userId] -c [channelId] --limit [messagesLimit] -o [outputfile]```  
+```
+python bot_collect_messages.py -t <discordBotToken> -u [userId] -c [channelId] --limit [messagesLimit] -o [outputfile]
+```  
 
 ```discordBotToken``` - unique token of your discord bot  
 ```userId``` - discord id of user whose message you want to collect (enable <i>Developer mode</i> in discord settings, right click on user avatar and copy id). If not specified, all users will be selected  
@@ -14,7 +16,9 @@
 ```outputFile``` - file to store messages needed to train model (<i>data/discord_conversation_{userId}.csv</i> by default)  
 
 ### Train model on collected messages
-```python bot_train.py --modelPath <modelPath> --dataPath <trainDataPath> -l [extractLimit] -e [epochsCount] --splits [validationSplitsCount]```  
+```
+python bot_train.py --modelPath <modelPath> --dataPath <trainDataPath> -l [extractLimit] -e [epochsCount] --splits [validationSplitsCount]
+```  
 
 ```modelPath``` - path to folder to save trained model  
 ```trainDataPath``` - path to '.csv' file with collected user messages  
@@ -31,7 +35,9 @@ Final count of training iterations will be <b>epochsCount * validationSplitsCoun
 - You can't retrain trained model on different dataset (only if this dataset contains same set of words)
 
 ### Start bot
-```python bot_start.py --token <discordBotToken> --model <modelPath>```  
+```
+python bot_start.py --token <discordBotToken> --model <modelPath
+```  
 
 ```discordBotToken``` - unique token of your discord bot  
 ```modelPath``` - path to folder to save trained model  
