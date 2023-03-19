@@ -141,10 +141,11 @@ def train(modelPath, dataPath, extractLimit, epochs, trains):
 
     print(f"\n[INFO] Extracted: {len(questions)}")
 
-    from tensorflow.keras.preprocessing.text import Tokenizer
+    if TOKENIZER == None:
+        from tensorflow.keras.preprocessing.text import Tokenizer
 
-    TOKENIZER = Tokenizer(filters='!"#%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n')
-    TOKENIZER.fit_on_texts(questions + answers)
+        TOKENIZER = Tokenizer(filters='!"#%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n')
+        TOKENIZER.fit_on_texts(questions + answers)
 
     vocab_size = len(TOKENIZER.word_index) + 1
     data_size = len(questions)
@@ -210,7 +211,7 @@ def main(argv):
     modelPath = None
     dataPath = None
     extractLimit = 200000
-    epochs = 50
+    epochs = 30
     trains = 1
 
     opts, args = getopt.getopt(argv, "hm:d:l:e:s:",["modelPath=", "dataPath=", "limit=", "epochs=", "trains="])
