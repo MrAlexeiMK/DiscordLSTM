@@ -91,7 +91,7 @@ def load(modelPath):
     print("[INFO] Loaded model contains " + str(vocab_size) + " words")
     print("[INFO] Model successfully loaded!")
 
-def train(modelPath, dataPath, extractLimit, epochs, splits):
+def train(modelPath, dataPath, extractLimit, epochs, trains):
     global MODEL, TOKENIZER
     
     loaded = False
@@ -190,41 +190,30 @@ def train(modelPath, dataPath, extractLimit, epochs, splits):
         
     signal.signal(signal.SIGINT, exit_handler)
 
-    from sklearn.model_selection import KFold
-
-    index = 0
-    for train_index, test_index in KFold(splits).split(Q):
-        print(f"[INFO] {index}/{splits} split")
-        Q_train, Q_test = Q[train_index], Q[test_index]
-        A_train, A_test = A[train_index], A[test_index]
-
-        try:
-            MODEL.fit(Q_train, A_train, epochs=epochs, 
-                      validation_data=(Q_test, A_test), callbacks=[ModelSaving(modelPath)])
-        except ValueError:
-            print(f"[WARNING] Model will be recreated at '{modelPath}' cause of different tokenizer")
-            create(modelPath, vocab_size)
-            MODEL.fit(Q_train, A_train, epochs=epochs, 
-                      validation_data=(Q_test, A_test), callbacks=[ModelSaving(modelPath)])
-        
-        save(modelPath)
-
-        index+=1
+    try:
+        MODEL.fit(Q, A, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=[ModelSaving(modelPath)])
+    except ValueError:
+        print(f"[WARNING] Model will be recreated at '{modelPath}' cause of different tokenizer")
+        create(modelPath, vocab_size)
+        MODEL.fit(Q, A, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=[ModelSaving(modelPath)])
     
     save(modelPath)
 
+    if trains > 0:
+        train(modelPath, dataPath, extractLimit, epochs, trains - 1)
+
 def train_help():
-    print('[INFO] python bot_train.py --modelPath <modelPath> --dataPath <trainDataPath> -l [extractLimit] -e [epochsCount] --splits [validationSplitsCount]')
+    print('[INFO] python bot_train.py --modelPath <modelPath> --dataPath <trainDataPath> -l [extractLimit] -e [epochsCount] --trains [countTrains]')
     sys.exit()
 
 def main(argv):
     modelPath = None
     dataPath = None
     extractLimit = 200000
-    epochs = 10
-    splits = 40
+    epochs = 50
+    trains = 1
 
-    opts, args = getopt.getopt(argv, "hm:d:l:e:s:",["modelPath=", "dataPath=", "limit=", "epochs=", "splits="])
+    opts, args = getopt.getopt(argv, "hm:d:l:e:s:",["modelPath=", "dataPath=", "limit=", "epochs=", "trains="])
     for opt, arg in opts:
         if opt == '-h':
             train_help()
@@ -238,8 +227,8 @@ def main(argv):
             extractLimit = int(arg)
         elif opt in ("-e", "--epochs"):
             epochs = int(arg)
-        elif opt in ("-s", "--splits"):
-            splits = int(arg)
+        elif opt in ("-t", "--trains"):
+            trains = int(arg)
 
     cancelled = False
 
@@ -253,7 +242,7 @@ def main(argv):
     if cancelled:
         train_help()
     
-    train(modelPath, dataPath, extractLimit, epochs, splits)
+    train(modelPath, dataPath, extractLimit, epochs, trains)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
